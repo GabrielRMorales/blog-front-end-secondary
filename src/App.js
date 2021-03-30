@@ -19,9 +19,15 @@ class App extends Component {
 
     let data;
     try {
-       data = await fetch(URL);
-        console.log(data);
-      return await data;
+       data = await fetch(URL+path, {
+         method: "GET",
+         headers: {
+           "Content-Type": "application/json",
+           "Authorization": `Bearer ${localStorage.getItem("token")}` || null
+         }
+       });
+       // console.log(data);
+      return data;
     } catch(err){
       console.log(err);
     }
@@ -40,11 +46,12 @@ class App extends Component {
       // console.log(fetched);
       // const data = await fetched.json();
 
-        let data = await this.fetchData();
-        console.log(data);
+        let data = await Promise.all([this.fetchData(), this.fetchData("/comments")]);
+       // console.log(data);
         this.setState({
-          posts: data.results
-        })
+          posts: data[0].results,
+          comments: data[1]
+        }, console.log(this.state));
       }
       catch(err){
         console.log(err)
@@ -56,7 +63,7 @@ class App extends Component {
           <header >
           <Layout />
           </header>
-          <DisplayBlog posts={this.state.posts} />
+          <DisplayBlog posts={this.state.posts} comments={this.state.comments} />
         </div>);
   }
 }

@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { within, render, screen } from '@testing-library/react';
 import userEvent from "@testing-library/user-event";
 import App from './App';
 import Layout from "./Layout";
 import DisplayBlog from "./DisplayBlog";
 
 beforeEach(()=>{
-  const fetchedData = {results: [
+  const fetchedPosts = {results: [
     {
         "timestamp": "2021-03-11T20:17:52.845Z",
         "_id": "602c53c037eaa204f0398587",
@@ -52,37 +52,7 @@ beforeEach(()=>{
         "__v": 0
     }
 ]};
-
-  fetch.mockImplementation(()=>Promise.resolve(fetchedData));
-})
-
-test('renders initial header layout', () => {
-  render(<App />);
-  const loginBtn = screen.getByText("Login/Register");
-  expect(loginBtn).toBeInTheDocument();
-  
-});
-
-test("displays initial posts to the page", async ()=>{
-  //render
-  render(<App />);
-
-  expect(screen.getByRole("loading-note")).toBeInTheDocument;
-  // expect(fetch).toHaveBeenCalledTimes(1);
-
-  let posts = await screen.findAllByRole("post");
-  expect(posts).toHaveLength(5);
-
-})
-
-
-/*
-test separately as layout functions, etc
-userEvent.click(loginBtn);
-  expect(screen.getByTestId("login-form")).toBeInTheDocument();
-  */
-
-  const comments = [
+  const fetchedComments = [
     {
         "timestamp": "2021-03-08T05:08:28.909Z",
         "_id": "604059f474ca5103583b72b7",
@@ -218,4 +188,46 @@ userEvent.click(loginBtn);
         "post": "602c53c037eaa204f0398587",
         "__v": 0
     }
-]
+];
+
+  fetch.mockImplementationOnce(()=>fetchedPosts);
+  fetch.mockImplementationOnce(()=>fetchedComments);
+})
+
+test('renders initial header layout', () => {
+  render(<App />);
+  const loginBtn = screen.getByText("Login/Register");
+  expect(loginBtn).toBeInTheDocument();
+  
+});
+
+test("displays initial posts and comments to the page", async ()=>{
+  //render
+  render(<App />);
+
+  expect(screen.getByRole("loading-note")).toBeInTheDocument;
+  // expect(fetch).toHaveBeenCalledTimes(1);
+
+  let posts = await screen.findAllByRole("post");
+  expect(posts).toHaveLength(5);
+  let comments = await screen.findAllByRole("comment");
+  expect(comments).toHaveLength(6);
+
+})
+  //now test that comments are within the posts
+test("comments appear under posts", async ()=>{
+  render( <App />);
+  const postOne = await screen.findByTestId("post-1");
+  expect(postOne).toBeInTheDocument;
+  const comments = await within(postOne).findAllByRole("comment");
+  expect(comments.length).toBe(3);
+
+});
+
+/*
+test separately as layout functions, etc
+userEvent.click(loginBtn);
+  expect(screen.getByTestId("login-form")).toBeInTheDocument();
+  */
+
+ 
