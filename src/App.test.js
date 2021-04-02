@@ -195,6 +195,8 @@ beforeEach(()=>{
 })
 
 test('renders initial header layout', () => {
+  //expect(localStorage.getItem).toBeCalledWith(""); --change this later and also
+  //change the comments/controls test to expect localStorage to have a token
   render(<App />);
   const loginBtn = screen.getByText("Login/Register");
   expect(loginBtn).toBeInTheDocument();
@@ -224,10 +226,14 @@ test("comments appear under posts", async ()=>{
 
 });
 
-/*
-test separately as layout functions, etc
-userEvent.click(loginBtn);
-  expect(screen.getByTestId("login-form")).toBeInTheDocument();
-  */
+test("header forms",async ()=>{
+  render(<App/>);
+  const loginBtn = screen.getByRole("registerOrLoginBtn");
+  userEvent.click(loginBtn);
+  expect(screen.getByTestId("register-login-form")).toBeInTheDocument();
+
+});
+
+
 
  
