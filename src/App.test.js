@@ -226,12 +226,22 @@ test("comments appear under posts", async ()=>{
 
 });
 
-test("header forms",async ()=>{
+test("header forms for logging in",async ()=>{
   render(<App/>);
-  const loginBtn = screen.getByRole("registerOrLoginBtn");
-  userEvent.click(loginBtn);
-  expect(screen.getByTestId("register-login-form")).toBeInTheDocument();
 
+  //don't forget to test close form button
+  
+  const loginBtn = screen.getByRole("registerOrLoginBtn");
+  expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: none");
+  expect(screen.getByTestId("login-form")).toHaveStyle("display: none");
+  userEvent.click(loginBtn);
+  expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: block");
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  const registerOrLoginForm = screen.getByTestId("register-or-login-form");
+  expect(registerOrLoginForm).toHaveStyle("display: none");
+  expect(screen.getByTestId("login-form")).toHaveStyle("display: block");
+
+  
 });
 
 
