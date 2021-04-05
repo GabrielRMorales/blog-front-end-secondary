@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-const Layout = ()=>{
+const Layout = (props)=>{
     const [shownForm, setForm] = useState("");
     //style={shownForm === "login-form" ? {display: "block"}: {display: "none"}}
        //have multiple forms and change display if they are true}
@@ -19,6 +19,7 @@ const Layout = ()=>{
     }}>Login/Register</button>
    <form id="register-or-login-form" data-testid="register-or-login-form" onSubmit={(e)=>{
                 e.preventDefault();
+                //depending registered's value, setForm as login or register
                 setForm("login-form");
             }} style={shownForm === "register-or-login-form" ? {display: "block"}: {display: "none"}} >
             <div id="close-register-login" className="close-form">X</div>
@@ -27,8 +28,34 @@ const Layout = ()=>{
             <input type="email" id="username-register-or-login" name="username" />
             <input type="submit" data-testid="register-or-login-submit" />
     </form>
-    <form id="login-form" data-testid="login-form" onSubmit={(e)=>{
-
+    <form id="login-form" data-testid="login-form" onSubmit={async (e)=>{
+        e.preventDefault();
+        setForm("");
+       let fetchedData;
+       
+       try {
+        fetchedData = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username: document.getElementById("username-login").value,
+            password: document.getElementById("password-login").value
+             })
+        });
+        fetchedData = await fetchedData.json();
+        
+        props.onSubmit({
+            authenticationCode: fetchedData.authenticationCode,
+            currentUserId: fetchedData.user._id
+        });
+        
+        
+    } catch(e){
+        console.log(e)
+    }
+      
     }} style={shownForm === "login-form" ? {display: "block"}: {display: "none"}}>
             <div id="close-login-form" className="close-form">X</div>
             <div id="login-errors" className="form-errors errors"></div>

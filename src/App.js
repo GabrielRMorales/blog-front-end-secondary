@@ -14,6 +14,7 @@ class App extends Component {
       currentUserId: null
     }
     this.fetchData = this.fetchData.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
   async fetchData(path){
 
@@ -27,7 +28,7 @@ class App extends Component {
          }
        });
        // console.log(data);
-      return data;
+      return await data.json();
     } catch(err){
       console.log(err);
     }
@@ -35,16 +36,6 @@ class App extends Component {
   }
   async componentDidMount(){
       try {
-      // const fetched = await fetch("http://localhost:3000",
-      // {
-      //   method: "GET",
-      //   headers: {
-      //       "Content-Type": "application/json",
-      //       "Authorization": `Bearer ${localStorage.getItem("token")}` || null
-      //   }
-      // });
-      // console.log(fetched);
-      // const data = await fetched.json();
 
         let data = await Promise.all([this.fetchData(), this.fetchData("/comments")]);
        // console.log(data);
@@ -58,12 +49,18 @@ class App extends Component {
       }
     
   }
+
+  handleSubmit(data){
+    this.setState(data, function(){
+      console.log(this.state);
+    });
+  }
   render(){
       return (<div>
           <header >
-          <Layout />
+          <Layout onSubmit={this.handleSubmit} />
           </header>
-          <DisplayBlog posts={this.state.posts} comments={this.state.comments} />
+          <DisplayBlog data={this.state} />
         </div>);
   }
 }

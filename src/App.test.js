@@ -1,10 +1,22 @@
-import { within, render, screen } from '@testing-library/react';
+import { within, render, screen, getDefaultNormalizer } from '@testing-library/react';
 import userEvent from "@testing-library/user-event";
 import App from './App';
 import Layout from "./Layout";
 import DisplayBlog from "./DisplayBlog";
 
 beforeEach(()=>{
+  const fetchedUsers = [{
+    "_id": "6028608de8b0a302a7fe527d",
+    "username": "gman@gmail.com",
+    "usertag": "gman1",
+    "admin": false
+  },{
+    "_id": "6031946d2dbc1701f651becf",
+    "username": "pulgo@gmail.com",
+    "usertag": "pulgo",
+    "admin": true
+  }]
+
   const fetchedPosts = {results: [
     {
         "timestamp": "2021-03-11T20:17:52.845Z",
@@ -190,8 +202,8 @@ beforeEach(()=>{
     }
 ];
 
-  fetch.mockImplementationOnce(()=>fetchedPosts);
-  fetch.mockImplementationOnce(()=>fetchedComments);
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>fetchedPosts}));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>fetchedComments}));
 })
 
 test('renders initial header layout', () => {
@@ -229,21 +241,85 @@ test("comments appear under posts", async ()=>{
 test("header forms for logging in",async ()=>{
   render(<App/>);
 
-  //don't forget to test close form button
-  
+  //don't forget to test close form buttons
+  //expect localStorage to be empty
   const loginBtn = screen.getByRole("registerOrLoginBtn");
   expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: none");
   expect(screen.getByTestId("login-form")).toHaveStyle("display: none");
   userEvent.click(loginBtn);
   expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: block");
+  //check what it was submitted with
   userEvent.click(screen.getByTestId("register-or-login-submit"));
+  //expect fetch to have been called?
+  //fetch.mockImplementationOnce(()=>({"registered": true}));
+
+  //
   const registerOrLoginForm = screen.getByTestId("register-or-login-form");
   expect(registerOrLoginForm).toHaveStyle("display: none");
   expect(screen.getByTestId("login-form")).toHaveStyle("display: block");
 
-  
 });
 
 
+test("logging in adds reply buttons",async ()=>{
+  render(< App />);
+  userEvent.click(screen.getByRole("registerOrLoginBtn"));
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
+    user: {
+      "_id": "6028608de8b0a302a7fe527d",
+      "username": "gman@gmail.com",
+      "usertag": "gman1",
+      "admin": false
+    },
+    token: "token",
+    authenticationCode: 1
+  })
+}));
+   //check what it was submitted with
 
+  userEvent.click(screen.getByTestId("login-submit"));
+  expect(fetch.mock.calls.length).toEqual(3);
+  expect(screen.getByTestId("login-form")).toHaveStyle("display: none");
+  
+  //expect fetch to have been called?
+  //expect "reply" button
+  expect(await screen.findAllByRole("reply")).toHaveLength(5);
+  let post = await within(await screen.findByTestId("post-1")).findByRole("reply");
+  expect(post).toBeInTheDocument();
+  
+})
+
+test("logging in adds edit and delete comment buttons", async ()=>{
+  render(<App/>);
+  userEvent.click(screen.getByRole("registerOrLoginBtn"));
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
+      user: {
+        "_id": "6028608de8b0a302a7fe527d",
+        "username": "gman@gmail.com",
+        "usertag": "gman1",
+        "admin": false
+      },
+      token: "token",
+      authenticationCode: 1
+    })
+  ));
+  userEvent.click(screen.getByTestId("login-submit"));
+  //expect edit/delete comment button but only for certain ones
+  expect(await screen.getByRole("edit-comment")).toBeInTheDocument();
+
+});
+//test for a log out button
+
+//add test for getting the register fom (registered should be false)
+
+
+//add test for when loading page is already at authentication code 1
+
+//test the reply button
+
+//test the edit comment button
+
+//test the delete comment button
  
