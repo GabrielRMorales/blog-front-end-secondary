@@ -359,7 +359,11 @@ describe("logging out functionality", ()=>{
     expect(await screen.findByRole("logout-button")).toBeInTheDocument();
     userEvent.click(screen.getByRole("logout-button"));
     expect(await screen.findByRole("registerOrLoginBtn")).toBeInTheDocument();
-    //test that reply, edit, and delete don't exist
+    //test that reply, edit, and delete buttons don't exist
+    expect(screen.queryAllByRole("reply")).toHaveLength(0)
+    expect(screen.queryByRole("edit-comment")).toBe(null);
+    expect(screen.queryByRole("delete-button")).toBe(null);
+
   });
     
 
