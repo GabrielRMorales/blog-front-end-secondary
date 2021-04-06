@@ -2,6 +2,7 @@ import React, {useState} from "react";
 
 const Layout = (props)=>{
     const [shownForm, setForm] = useState("");
+
     //style={shownForm === "login-form" ? {display: "block"}: {display: "none"}}
        //have multiple forms and change display if they are true}
        /* shownForm === "login-form" ? <form id="login-form" data-testid="login-form" >
@@ -14,9 +15,25 @@ const Layout = (props)=>{
             <input type="submit" />
         </form> : null */
     return <div>
+    {props.user ? <button role="logout-button" onClick={async ()=>{
+        try {
+            let data = await fetch("http://localhost:3000/logout");
+            data = await data.json();
+            if (localStorage.getItem("token")){
+                localStorage.removeItem("token");
+            }
+            props.onSubmit({
+                authenticationCode: 0,
+                currentUserId: null
+            })
+        } catch (err){
+            console.log(err);
+        }
+    }}>Logout</button> :
     <button role="registerOrLoginBtn" onClick={()=>{
         setForm("register-or-login-form");
-    }}>Login/Register</button>
+    }}>Login/Register</button>}
+    
    <form id="register-or-login-form" data-testid="register-or-login-form" onSubmit={(e)=>{
                 e.preventDefault();
                 //depending registered's value, setForm as login or register
@@ -50,7 +67,7 @@ const Layout = (props)=>{
             authenticationCode: fetchedData.authenticationCode,
             currentUserId: fetchedData.user._id
         });
-        
+
         
     } catch(e){
         console.log(e)

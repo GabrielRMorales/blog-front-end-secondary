@@ -58,7 +58,7 @@ class App extends Component {
   render(){
       return (<div>
           <header >
-          <Layout onSubmit={this.handleSubmit} />
+          <Layout user={this.state.currentUserId} onSubmit={this.handleSubmit} />
           </header>
           <DisplayBlog data={this.state} />
         </div>);
