@@ -4,8 +4,35 @@ import App from './App';
 import Layout from "./Layout";
 import DisplayBlog from "./DisplayBlog";
 
+// const localStorageMock = (function() {
+//   let store = {};
+  
+//   return {
+//     getItem(key) {
+//       return store[key];
+//     },
+ 
+//     setItem(key, value) {
+//       store[key] = value;
+//     },
+  
+//     clear() {
+//       store = {};
+//     },
 
-  const fetchedUsers = [{
+//     removeItem(key) {
+//       delete store[key];
+//     },
+     
+//     getAll() {
+//       console.log(store);
+//     }
+//   };
+// })();
+
+// Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+const fetchedUsers = [{
     "_id": "6028608de8b0a302a7fe527d",
     "username": "gman@gmail.com",
     "usertag": "gman1",
@@ -17,7 +44,7 @@ import DisplayBlog from "./DisplayBlog";
     "admin": true
   }]
 
-  const fetchedPosts = {results: [
+  const fetchedPosts = [
     {
         "timestamp": "2021-03-11T20:17:52.845Z",
         "_id": "602c53c037eaa204f0398587",
@@ -63,7 +90,7 @@ import DisplayBlog from "./DisplayBlog";
         "user": "6031946d2dbc1701f651becf",
         "__v": 0
     }
-]};
+];
   const fetchedComments = [
     {
         "timestamp": "2021-03-08T05:08:28.909Z",
@@ -203,11 +230,35 @@ import DisplayBlog from "./DisplayBlog";
 ];
 
 describe("initial layout", ()=>{ 
+// beforeAll(()=>{
+//   global.Storage.prototype.setItem = jest.fn((key, value)=>{
+    
+//     tokenStorage[key]=value;
+//   });
+//   global.Storage.prototype.getItem = jest.fn((key)=>tokenStorage[key])
 
+// })
+
+// afterAll(()=>{
+//   global.Storage.prototype.setItem.mockReset();
+//   global.Storage.prototype.getItem.mockReset();
+
+// });
 beforeEach(()=>{
-  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>fetchedPosts}));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json:
+    ()=>({results: fetchedPosts,
+          authenticationCode: 0,
+          user: null,
+          token: ""
+    }) 
+  }));
   fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>fetchedComments}));
+  jest.spyOn(Storage.prototype, 'setItem');
   render(<App />);
+})
+
+afterEach(()=>{
+  jest.clearAllMocks();
 })
 
 test('renders initial header layout', () => {
@@ -242,27 +293,54 @@ describe("logging in functionality",()=>{
 test("header forms for logging in",async ()=>{
     //don't forget to test close form buttons
   //expect localStorage to be empty
+  //expect(global.Storage.prototype.getItem("token")).toBe(undefined);
   const loginBtn = screen.getByRole("registerOrLoginBtn");
   expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: none");
   expect(screen.getByTestId("login-form")).toHaveStyle("display: none");
   userEvent.click(loginBtn);
   expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: block");
-  //check what it was submitted with
-  userEvent.click(screen.getByTestId("register-or-login-submit"));
   //expect fetch to have been called?
-  //fetch.mockImplementationOnce(()=>({"registered": true}));
-
-  //
-  const registerOrLoginForm = screen.getByTestId("register-or-login-form");
-  expect(registerOrLoginForm).toHaveStyle("display: none");
-  expect(screen.getByTestId("login-form")).toHaveStyle("display: block");
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
+  //check what it was submitted with?
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  //await and "findByTestId" vs "getByTestId" are key for testing changes 
+  //in the DOM's appearanced based on state
+ const registerOrLoginForm = await screen.findByTestId("register-or-login-form");
+ expect(registerOrLoginForm).toHaveStyle("display: none");
+ expect(await screen.findByTestId("login-form")).toHaveStyle("display: block");
 
 });
+/*
+test("localStorage is changed upon logging in properly",async ()=>{
+  
+  //expect(global.Storage.prototype.getItem("token")).toBe(undefined);
+  userEvent.click(screen.getByRole("registerOrLoginBtn"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
+    user: {
+      "_id": "6028608de8b0a302a7fe527d",
+      "username": "gman@gmail.com",
+      "usertag": "gman1",
+      "admin": false
+    },
+    token: "token",
+    authenticationCode: 1
+    })
 
+  }));
+  userEvent.click(screen.getByTestId("login-submit"));
+  //expect(localStorage.setItem).toHaveBeenCalledWith("token","token");
+})
+*/
 
-test("logging in adds reply buttons",async ()=>{
+test("logging in adds reply buttons",async ()=>{-
   
   userEvent.click(screen.getByRole("registerOrLoginBtn"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
   userEvent.click(screen.getByTestId("register-or-login-submit"));
   fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
     user: {
@@ -278,7 +356,7 @@ test("logging in adds reply buttons",async ()=>{
   }));
    //check what it was submitted with?
   userEvent.click(screen.getByTestId("login-submit"));
-  expect(fetch.mock.calls.length).toEqual(3);
+  expect(fetch.mock.calls.length).toEqual(4);
   expect(screen.getByTestId("login-form")).toHaveStyle("display: none");
   
   //expect fetch to have been called?
@@ -290,6 +368,8 @@ test("logging in adds reply buttons",async ()=>{
 
 test("logging in adds edit and delete comment buttons", async ()=>{
    userEvent.click(screen.getByRole("registerOrLoginBtn"));
+   fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
   userEvent.click(screen.getByTestId("register-or-login-submit"));
   fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
       user: {
@@ -317,6 +397,8 @@ describe("logging out functionality", ()=>{
   //render(<App/>);
   test("that logout button exists",async ()=>{
     userEvent.click(screen.getByRole("registerOrLoginBtn"));
+    fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
     userEvent.click(screen.getByTestId("register-or-login-submit"));
     fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
           user: {
@@ -339,6 +421,8 @@ describe("logging out functionality", ()=>{
    //test log out button works
   test("that log out button works",async ()=>{
     userEvent.click(screen.getByRole("registerOrLoginBtn"));
+    fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": true})
+  }));
     userEvent.click(screen.getByTestId("register-or-login-submit"));
     fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
           user: {
@@ -371,20 +455,165 @@ describe("logging out functionality", ()=>{
 
 //add test for getting the register form (registered should be false)
 
-//add test for when loading page is already at authentication code 1
+test("header forms for registering",async ()=>{
+  const loginBtn = screen.getByRole("registerOrLoginBtn");
+  expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: none");
+  expect(screen.getByTestId("register-form")).toHaveStyle("display: none");
+  userEvent.click(loginBtn);
+  expect(screen.getByTestId("register-or-login-form")).toHaveStyle("display: block");
+  //expect fetch to have been called?
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({"registered": false})
+  }));
+  //check what it was submitted with?
+  userEvent.click(screen.getByTestId("register-or-login-submit"));
+  //await and "findByTestId" vs "getByTestId" are key for testing changes 
+  //in the DOM's appearanced based on state
+  expect(await screen.findByTestId("register-or-login-form")).toHaveStyle("display: none");
+  expect(await screen.findByTestId("register-form")).toHaveStyle("display: block");
+});
 
+//add test for actually registering-the registration form has no submit cb
 
 }); //end of describe "initial layout"
 
 
 
-describe("blog functionality",()=>{
+describe("blog functionality", ()=>{
 
+  beforeEach(()=>{
+    // expect(localStorage.getItem("token")).not.toBe(null); --not working
+  //mock fetch results
+    fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>({
+      results: fetchedPosts,
+      authenticationCode: 1,
+      user: "6028608de8b0a302a7fe527d"
+      })
+    }));
+
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>fetchedComments }) );
+  render(<App/>);
+  })
+  afterEach(()=>{
+    jest.clearAllMocks();
+  })
+  //add test for when loading page is already at authentication code 1
+test("that reply, edit, and delete comment buttons appear if user log in is saved", async ()=>{
+  
+  expect(await screen.findAllByRole("post")).toHaveLength(5);
+  expect(await screen.findAllByRole("comment")).toHaveLength(6);
+  expect(await screen.findAllByRole("reply")).toHaveLength(5);
+  expect(await screen.findByRole("edit-comment")).toBeInTheDocument();
+  expect(await screen.findByRole("delete-comment")).toBeInTheDocument();
+});
+
+test("that posts show the text that they're supposed to",async ()=>{
+  let postOne = await screen.findByTestId("post-1");
+  expect(postOne).toBeInTheDocument();
+  expect(within(postOne).getByText("MOAR testing!")).toBeInTheDocument();
+  expect(within(postOne).getByText("Testing to see if updating will work")).toBeInTheDocument();
+
+});
+
+test("that comments show the text that they're supposed to", async ()=>{
+  let commentOne = await screen.findByTestId("comment-2");
+  expect(commentOne).toBeInTheDocument();
+  expect(within(commentOne).getByText("yugioh!")).toBeInTheDocument();
+ 
+})
 //test that edit/delete are only for correct comments
+test("that edit and delete comments are for the appropriate comments", async ()=>{
+  expect(await screen.findByRole("edit-comment")).toBeInTheDocument();
+  expect(await screen.findByRole("delete-comment")).toBeInTheDocument();
+  let userComment = await screen.findByTestId("comment-9");
+  expect(userComment).toBeInTheDocument();
+  let commentControls = await within(userComment).findByRole("comment-controls");
+  expect(commentControls).toBeInTheDocument();
+  let editComment = await within(userComment).findByRole("edit-comment");
+  expect(editComment).toBeInTheDocument();
+  let deleteComment = await within(userComment).findByRole("delete-comment");
+  expect(deleteComment).toBeInTheDocument();
+  
+});
+
+//for these it may be necessary to test them based upon both rendering
+//initially as well as rendering after logging in
+
+
 
 //test the reply button
+test("that the reply button brings up a new comment form", async ()=>{
+  let replyBtn = screen.getByTestId("reply-1");
+  expect(replyBtn).toBeInTheDocument();
+  userEvent.click(screen.getByTestId("reply-1"));
+  expect(screen.getByTestId("new-comment-form-1")).toBeInTheDocument();
 
-//test the edit comment button
+});
+
+test("that submitting a new comment form adds a new comment to the page",async ()=>{
+  userEvent.click(screen.getByTestId("reply-1"));
+  //mock fetch
+  fetch.mockImplementationOnce(()=>Promise.resolve({ json:
+    ()=>({
+      "timestamp": "2021-04-08T05:08:28.909Z",
+      "_id": "605059f474ca5103583b734362",
+      "text": "test comment!",
+      "user": {
+          "_id": "6031946d2dbc1701f651becf",
+          "username": "gman@gmail.com",
+          "usertag": "gman",
+          "password": "password!",
+          "admin": false,
+          "__v": 0
+      },
+      "post": "602c53c037eaa204f0398587",
+      "__v": 0
+    })
+  }));
+  expect(screen.getAllByRole("comment")).toHaveLength(6);
+  userEvent.click( screen.getByTestId("submit-comment-form-1"));
+  expect(await screen.findAllByRole("comment")).toHaveLength(7);
+  //add a couple more assertions here once previous passes, such
+  //as the previous form not showing
+});
+
+//test that new comment has an edit and delete button
+
+//test that edit comment button brings up form
+test("the edit comment button brings up a form",async ()=>{
+  expect(await screen.findByTestId("edit-comment-9")).toBeInTheDocument();
+  userEvent.click(screen.getByTestId("edit-comment-9"));
+  expect(await screen.findByTestId("edit-comment-form-9")).toBeInTheDocument();
+
+})
+//test that submitting edit comment form changes comment
+test("that submitting the edit comment form changes the text",async ()=>{
+  expect(screen.getByTestId("comment-9")).toBeInTheDocument();
+  expect(within(screen.getByTestId("comment-9")).getByText("dfsfdsfsdfsfsfs")).toBeInTheDocument();
+  userEvent.click(screen.getByTestId("edit-comment-9"));
+  fetch.mockImplementationOnce(()=>Promise.resolve({json: ()=>{
+    return {
+      "timestamp": "2021-03-12T00:48:33.591Z",
+      "_id": "604ad33dcbbcfd0355d8086d",
+      "text": "new text",
+      "user": {
+          "_id": "6028608de8b0a302a7fe527d",
+          "username": "gman@gmail.com",
+          "usertag": "gman1",
+          "password": "$2b$10$IBQWyV9F.PfZdeHfQciY9.Y5/4Zx65wxKw7AW7tcA8l8hV.oKfx7G",
+          "admin": false,
+          "__v": 0
+      },
+      "post": "602c53c037eaa204f0398587",
+      "__v": 0
+  }
+  }}))
+  expect(await screen.findByTestId("submit-edit-comment-9")).toBeInTheDocument();
+  userEvent.click(screen.getByTestId("submit-edit-comment-9"));
+  expect(screen.getByTestId("comment-9")).toBeInTheDocument();
+  expect(await within(screen.getByTestId("comment-9")).findByText("new text")).toBeInTheDocument();
+
+});
+//test that edited comment has an edit and delete button
 
 //test the delete comment button
 
